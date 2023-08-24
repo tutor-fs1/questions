@@ -1,32 +1,58 @@
-const questionsList = [
-  { id: 1, text: 'Lectia 1 question', user: 'Andrei 1' },
-  { id: 2, text: 'Lectia 2 question', user: 'Andrei 2' },
-  { id: 3, text: 'Lectia 3 question', user: 'Andrei 3' },
-  { id: 4, text: 'Lectia 4 question', user: 'Andrei 4' },
-  { id: 5, text: 'Lectia 5 question', user: 'Andrei 5' },
-  { id: 6, text: 'Lectia 6 question', user: 'Andrei 6' }
-];
+import { useEffect, useRef } from "react";
+import { useDispatch, useSelector } from "react-redux";
+import { getQuestions } from "../../redux/operations";
+import { clearItems, setSelectQuestion } from "../../redux/questionsSlice";
+import { addQuestion } from "../../redux/operations";
+import { selectLessons, selectQuestions } from "../../redux/selectors";
 
 export const Questions = () => {
+  const textRef = useRef();
+  const userRef = useRef();
+  const dispatch = useDispatch();
+  const { selected } = useSelector(selectLessons);
+  const { items, selectedQuestion } = useSelector(selectQuestions);
+
+  useEffect(() => {
+    if (selected === null) {
+      dispatch(clearItems())
+    } else {
+      dispatch(getQuestions(selected));
+    }
+  }, [selected, dispatch]);
+  const handleAdd = () => {
+    const user = userRef.current.value;
+    const text = textRef.current.value;
+    const lesssonId = selected;
+    dispatch(addQuestion({ user: user, text: text, lesson_id: lesssonId }))
+  }
+  const handleSelect = (id) => {
+    dispatch(setSelectQuestion(id));
+  }
   return (
     <div>
-      <h2>Questions</h2>
+      <h2>{selected === null ? 'No lessson selected' : 'Questions'}</h2>
       <ul className="list-group">
-        {questionsList.length > 0 &&
-          questionsList.map((q) => {
-            return <li key={q.id} className="list-group-item">
-              <span className='list-item-name'>{q.text} - {q.user}</span>
+        {items.length > 0 &&
+          items.map((q) => {
+            const thisStyle = {};
+            if (q.id === selectedQuestion) {
+              thisStyle.border = '1px solid red';
+            }
+            return <li key={q.id} style={thisStyle} className="list-group-item">
+              <span onClick={() => handleSelect(q.id)} className='list-item-name'>{q.text} - {q.user}</span>
               <button type="button" className="btn-close" aria-label="Close"></button>
             </li>
           })
         }
-        <li className="list-group-item">
-          <div className="input-group">
-            <input type="text" className="form-control" placeholder="Question text" />
-            <input type="text" className="form-control" placeholder="Your Name" />
-            <span className="input-group-text" id="basic-addon2">Add</span>
-          </div>
-        </li>
+        {selected !== null &&
+          <li className="list-group-item mt-5">
+            <div className="input-group">
+              <textarea ref={textRef} type="text" className="form-control" placeholder="Question text"></textarea>
+              <input ref={userRef} type="text" className="form-control" placeholder="Your Name" />
+              <span onClick={handleAdd} className="input-group-text" id="basic-addon2">Add</span>
+            </div>
+          </li>
+        }
       </ul>
     </div>
   );
